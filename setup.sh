@@ -7,6 +7,17 @@ cd "$ROOT"
 echo "=== Etsy Product Creator kurulum ==="
 OS="$(uname -s)"
 
+# 0. Self-heal: eski kurulumlarda yanlis remote URL'i duzelt
+if [ -d .git ] && command -v git >/dev/null 2>&1; then
+  CUR_URL="$(git remote get-url origin 2>/dev/null || true)"
+  if echo "$CUR_URL" | grep -q "digitalvendorxx"; then
+    git remote set-url origin https://github.com/esenbora/etsy-product-creator.git
+    echo ">> Remote duzeltildi: digitalvendorxx -> esenbora"
+    git fetch --quiet origin main 2>/dev/null || true
+    git reset --hard origin/main 2>/dev/null || true
+  fi
+fi
+
 need() { command -v "$1" >/dev/null 2>&1; }
 die()  { echo "ERROR: $*" >&2; exit 1; }
 

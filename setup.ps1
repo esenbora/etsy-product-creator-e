@@ -19,6 +19,19 @@ function RefreshPath {
 
 Write-Host "=== Etsy Product Creator - Windows kurulum ===" -ForegroundColor Magenta
 
+# 0. Self-heal: eski kurulumlarda yanlis remote URL'i duzelt
+if (Test-Path (Join-Path $Root ".git")) {
+  try {
+    $curUrl = git remote get-url origin 2>$null
+    if ($curUrl -match "digitalvendorxx") {
+      git remote set-url origin "https://github.com/esenbora/etsy-product-creator.git"
+      Write-Host ">> Remote duzeltildi: digitalvendorxx -> esenbora" -ForegroundColor Yellow
+      git fetch --quiet origin main 2>$null
+      git reset --hard origin/main 2>$null
+    }
+  } catch { }
+}
+
 # 1. winget
 if (-not (Need winget)) {
   throw "winget bulunamadi. Windows 10/11 guncel olmali. https://aka.ms/getwinget"

@@ -200,20 +200,30 @@ for /f ""tokens=5"" %%a in ('netstat -ano ^| find "":9333 "" ^| find ""LISTENING
 echo Bitti.
 "@ | Set-Content -Encoding ASCII (Join-Path $Root "stop.bat")
 
-# 12. Masaustu kisayolu (.lnk)
+# 12. Masaustu kisayollari - .bat (her durumda calisir) + .lnk (varsa daha guzel ikon)
+$desktop = [Environment]::GetFolderPath("Desktop")
+if (-not (Test-Path $desktop)) { $desktop = Join-Path $HOME "Desktop" }
+if (-not (Test-Path $desktop)) { New-Item -ItemType Directory -Path $desktop | Out-Null }
+
+# A) .bat fallback - COM/policy engeli olmadan calisir
+$batPath = Join-Path $desktop "Etsy Creator.bat"
+$batContent = "@echo off`r`ncd /d `"$Root`"`r`ncall launch.bat`r`n"
+Set-Content -Path $batPath -Value $batContent -Encoding ASCII
+Ok "Masaustu: 'Etsy Creator.bat' -> $batPath"
+
+# B) .lnk denemesi (basarisiz olursa .bat zaten var)
 try {
-  $desktop = [Environment]::GetFolderPath("Desktop")
   $lnkPath = Join-Path $desktop "Etsy Creator.lnk"
-  $wsh = New-Object -ComObject WScript.Shell
+  $wsh = New-Object -ComObject WScript.Shell -ErrorAction Stop
   $lnk = $wsh.CreateShortcut($lnkPath)
   $lnk.TargetPath = (Join-Path $Root "launch.bat")
   $lnk.WorkingDirectory = $Root
-  $lnk.WindowStyle = 7   # minimized
+  $lnk.WindowStyle = 7
   $lnk.Description = "Flowiqa Etsy Product Creator"
   $lnk.Save()
-  Ok "Masaustu: 'Etsy Creator.lnk' (cift tik ile baslat)"
+  Ok "Masaustu: 'Etsy Creator.lnk' (daha guzel ikon)"
 } catch {
-  Warn "Masaustu kisayolu olusturulamadi: $_"
+  Warn ".lnk olusturulamadi (COM/policy engeli) - .bat kullanilacak"
 }
 
 Write-Host ""

@@ -145,20 +145,25 @@ npm start
 # 11. Birlesik launcher
 @"
 @echo off
+setlocal EnableDelayedExpansion
 cd /d "%~dp0"
 if not exist logs mkdir logs
 
-REM Otomatik guncelleme (sessiz)
+REM Otomatik guncelleme - kendini yeniden yaziyor olabilecegi icin update sonrasi re-exec
 if exist .git (
   for /f %%H in ('git rev-parse HEAD 2^>nul') do set CURRENT=%%H
   git fetch --quiet origin main >nul 2>&1
   for /f %%S in ('git status --porcelain 2^>nul ^| find /c /v ""') do set DIRTY=%%S
-  if "%DIRTY%"=="0" (
+  if "!DIRTY!"=="0" (
     git pull --ff-only --quiet origin main >nul 2>&1
     for /f %%N in ('git rev-parse HEAD 2^>nul') do set NEW=%%N
-    if not "%CURRENT%"=="%NEW%" (
+    if not "!CURRENT!"=="!NEW!" (
       echo [update] guncelleme alindi, npm install...
-      call npm install --silent --no-fund --no-audit >nul 2>&1
+      call npm install --silent --no-fund --no-audit
+      echo [update] yeniden baslatiliyor...
+      timeout /t 1 /nobreak >nul
+      start "" "%~f0"
+      exit /b
     )
   )
 )
@@ -183,6 +188,7 @@ for /L %%i in (1,1,30) do (
 )
 :ready
 start http://localhost:3000
+endlocal
 "@ | Set-Content -Encoding ASCII (Join-Path $Root "launch.bat")
 
 # Stop scripti

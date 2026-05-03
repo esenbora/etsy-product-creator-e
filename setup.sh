@@ -169,8 +169,8 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 mkdir -p logs
 
-# 0. Otomatik guncelleme (sessiz, basarisiz olursa devam et)
-if [ -d .git ] && command -v git >/dev/null 2>&1; then
+# 0. Otomatik guncelleme - kendini yeniden yaziyor olabilecegi icin update sonrasi re-exec
+if [ -z "$EPC_RELAUNCHED" ] && [ -d .git ] && command -v git >/dev/null 2>&1; then
   CURRENT="$(git rev-parse HEAD 2>/dev/null)"
   if git fetch --quiet origin main 2>/dev/null; then
     LOCAL_CHANGES="$(git status --porcelain 2>/dev/null)"
@@ -180,6 +180,9 @@ if [ -d .git ] && command -v git >/dev/null 2>&1; then
       if [ "$CURRENT" != "$NEW" ]; then
         echo "[update] guncelleme alindi, npm install..."
         npm install --silent --no-fund --no-audit 2>/dev/null || true
+        echo "[update] yeniden baslatiliyor..."
+        export EPC_RELAUNCHED=1
+        exec "$0" "$@"
       fi
     fi
   fi

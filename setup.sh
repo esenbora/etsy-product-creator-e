@@ -136,7 +136,7 @@ for d in designs mockups output data logs reports uploads templates; do
 done
 echo "   Klasorler hazir"
 
-# 9. Kisayol scriptleri
+# 9. Eski yedek scriptler (manuel browser veya server start gerekirse)
 cat > start-browser.sh <<'EOF'
 #!/usr/bin/env bash
 cd "$(dirname "$0")"
@@ -151,6 +151,9 @@ npm start
 EOF
 chmod +x start.sh
 
+# launch.sh repo'da var (release branch). chmod +x emin ol.
+[ -f launch.sh ] && chmod +x launch.sh
+
 cat <<EOF
 
 === KURULUM TAMAM ===
@@ -162,12 +165,13 @@ KALAN ADIMLAR:
 
   2. config.json -> templateListingId alanina kendi sablon Etsy listing ID gir.
 
-  3. CDP browser baslat (etsy + pinterest login icin):
-       ./start-browser.sh
-     Acilan pencerede etsy.com + pinterest.com login ol. Pencere acik kalsin.
+  3. Tek tik baslatmak icin:
+       ./launch.sh              # update kontrol + browser + server + tarayici acilir
+       (ilk acilista /activate sayfasi lisans key ister)
 
-  4. Yeni terminalde server:
-       ./start.sh
+  Manuel mod (yedek):
+       ./start-browser.sh       # etsy + pinterest login icin
+       ./start.sh               # server (yeni terminalde)
 
-  5. Tarayicida: http://localhost:3000
+  4. Sorun varsa: npm run doctor    # 11 saglik kontrolu
 EOF

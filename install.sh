@@ -66,8 +66,12 @@ Klasor: $TARGET_DIR
 
 Sirayla:
   cd "$TARGET_DIR"
-  nano .env                  # GEMINI + OPENROUTER key
-  ./start-browser.sh         # etsy + pinterest login (1 kere)
-  ./start.sh                 # server :3000
-  open http://localhost:3000
+  nano .env                # GEMINI + OPENROUTER key gir
+  ./launch.sh              # tek tik: update + browser + server + tarayici acilir
+                           # etsy + pinterest login bir kere (acik browser'da)
+                           # /activate sayfasi ilk acilista lisans key ister
+
+Tek tik kullanim icin:
+  Mac:    chmod +x launch.sh ve Finder'da cift tik (ya da Automator app yap)
+  Linux:  ~/.local/share/applications/epc.desktop yap
 EOF

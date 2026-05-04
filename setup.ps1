@@ -116,7 +116,7 @@ foreach ($d in @("designs","mockups","output","data","logs","reports","uploads",
 }
 Ok "Klasorler hazir"
 
-# 10. Kisayol bat
+# 10. Yedek manuel scriptler (launch.bat asil giris noktasi, repo'da var)
 @"
 @echo off
 cd /d "%~dp0"
@@ -129,6 +129,21 @@ cd /d "%~dp0"
 npm start
 "@ | Set-Content -Encoding ASCII (Join-Path $Root "start.bat")
 
+# 11. Masaustu kisayolu launch.bat'a point et
+try {
+  $desktop = [Environment]::GetFolderPath("Desktop")
+  $launchPath = Join-Path $Root "launch.bat"
+  if (Test-Path $launchPath) {
+    $wsh = New-Object -ComObject WScript.Shell
+    $lnk = $wsh.CreateShortcut((Join-Path $desktop "Etsy Product Creator.lnk"))
+    $lnk.TargetPath = $launchPath
+    $lnk.WorkingDirectory = $Root
+    $lnk.IconLocation = "shell32.dll,13"
+    $lnk.Save()
+    Ok "Masaustu kisayolu olusturuldu: 'Etsy Product Creator'"
+  }
+} catch { Warn "Masaustu kisayol atlandi: $_" }
+
 Write-Host ""
 Write-Host "=== KURULUM TAMAM ===" -ForegroundColor Green
 Write-Host ""
@@ -137,6 +152,9 @@ Write-Host "  1. .env ac, doldur:"
 Write-Host "       GEMINI_API_KEY=...        (zorunlu)"
 Write-Host "       OPENROUTER_API_KEY=...    (zorunlu)"
 Write-Host "  2. config.json -> templateListingId alanini doldur"
-Write-Host "  3. start-browser.bat  (etsy + pinterest login, 1 kere)"
-Write-Host "  4. start.bat          (server :3000)"
-Write-Host "  5. http://localhost:3000"
+Write-Host "  3. Tek tik baslatmak icin: masaustunden 'Etsy Product Creator' kisayolu"
+Write-Host "     veya: launch.bat (update + browser + server + tarayici acilir)"
+Write-Host "     Ilk acilista /activate sayfasi lisans key ister."
+Write-Host ""
+Write-Host "  Yedek manuel: start-browser.bat + start.bat"
+Write-Host "  Saglik kontrolu: npm run doctor"

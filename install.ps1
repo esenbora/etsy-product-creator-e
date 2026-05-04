@@ -1,12 +1,13 @@
 # Etsy Product Creator - Windows tek satir kurulum
 # Kullanim:
-#   iwr -useb https://raw.githubusercontent.com/digitalvendorxx/etsy-product-creator/main/install.ps1 | iex
+#   iwr -useb https://raw.githubusercontent.com/esenbora/etsy-product-creator/main/install.ps1 | iex
 # Ozel hedef:
 #   $env:TARGET="C:\etsy-tool"; iwr ... | iex
 
 $ErrorActionPreference = "Stop"
 
-$REPO_URL = "https://github.com/digitalvendorxx/etsy-product-creator.git"
+$REPO_URL = "https://github.com/esenbora/etsy-product-creator.git"
+$BRANCH = if ($env:BRANCH) { $env:BRANCH } else { "release" }
 $TARGET = if ($env:TARGET) { $env:TARGET } else { Join-Path $HOME "etsy-product-creator" }
 
 Write-Host "=== Etsy Product Creator - Windows tek satir kurulum ===" -ForegroundColor Cyan
@@ -36,16 +37,19 @@ Write-Host "   git: $(git --version)"
 
 # Clone / pull
 if (Test-Path (Join-Path $TARGET ".git")) {
-  Write-Host ">> Mevcut klasor, guncelleniyor..." -ForegroundColor Yellow
+  Write-Host ">> Mevcut klasor, $BRANCH branch'ine geciliyor + guncelleniyor..." -ForegroundColor Yellow
   Push-Location $TARGET
-  git pull --ff-only origin main
+  git fetch origin $BRANCH --tags --quiet
+  git checkout $BRANCH 2>$null
+  if ($LASTEXITCODE -ne 0) { git checkout -b $BRANCH "origin/$BRANCH" }
+  git pull --ff-only origin $BRANCH
   Pop-Location
 } elseif (Test-Path $TARGET) {
   Write-Host "HATA: $TARGET var ama git deposu degil." -ForegroundColor Red
   exit 1
 } else {
-  Write-Host ">> Clone: $REPO_URL" -ForegroundColor Yellow
-  git clone $REPO_URL $TARGET
+  Write-Host ">> Clone: $REPO_URL ($BRANCH)" -ForegroundColor Yellow
+  git clone --branch $BRANCH --single-branch $REPO_URL $TARGET
 }
 
 Set-Location $TARGET

@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 # Tek satirlik kurulum (yeni makine, repo henuz yok):
-#   curl -fsSL https://raw.githubusercontent.com/digitalvendorxx/etsy-product-creator/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/esenbora/etsy-product-creator/release/install.sh | bash
 # Ozel hedef:
 #   curl -fsSL .../install.sh | bash -s -- /baska/yol
+# Beta kanali (gelistirici):
+#   BRANCH=main curl -fsSL .../install.sh | bash
 
 set -e
 
-REPO_URL="https://github.com/digitalvendorxx/etsy-product-creator.git"
+REPO_URL="https://github.com/esenbora/etsy-product-creator.git"
+BRANCH="${BRANCH:-release}"
 TARGET_DIR="${1:-$HOME/etsy-product-creator}"
 
 echo "=== Etsy Product Creator - tek satir kurulum ==="
@@ -38,14 +41,16 @@ echo "   git: $(git --version)"
 
 # 2. Clone veya pull
 if [ -d "$TARGET_DIR/.git" ]; then
-  echo ">> Mevcut klasor, guncelleniyor..."
+  echo ">> Mevcut klasor, $BRANCH branch'ine geciliyor + guncelleniyor..."
   cd "$TARGET_DIR"
-  git pull --ff-only origin main || die "git pull basarisiz (local degisiklik var mi?)"
+  git fetch origin "$BRANCH" --tags --quiet
+  git checkout "$BRANCH" 2>/dev/null || git checkout -b "$BRANCH" "origin/$BRANCH"
+  git pull --ff-only origin "$BRANCH" || die "git pull basarisiz (local degisiklik var mi?)"
 elif [ -e "$TARGET_DIR" ]; then
   die "$TARGET_DIR var ama git deposu degil. Sil veya baska hedef sec: bash install.sh /baska/yol"
 else
-  echo ">> Clone: $REPO_URL"
-  git clone "$REPO_URL" "$TARGET_DIR"
+  echo ">> Clone: $REPO_URL ($BRANCH)"
+  git clone --branch "$BRANCH" --single-branch "$REPO_URL" "$TARGET_DIR"
   cd "$TARGET_DIR"
 fi
 

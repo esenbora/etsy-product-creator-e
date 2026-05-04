@@ -535,6 +535,10 @@ const upload = multer({
 // Parse JSON body
 app.use(express.json());
 
+// flowiqa.com lisans middleware - sonraki tum route'lari korur
+const { mountLicense } = require('./lib/license');
+mountLicense(app);
+
 // API key middleware
 app.use((req, res, next) => {
   req.apiKey = process.env.OPENROUTER_API_KEY || '';

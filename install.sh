@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Tek satirlik kurulum (yeni makine, repo henuz yok):
-#   curl -fsSL https://raw.githubusercontent.com/esenbora/etsy-product-creator/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/digitalvendorxx/etsy-product-creator/main/install.sh | bash
 # Ozel hedef:
 #   curl -fsSL .../install.sh | bash -s -- /baska/yol
 
 set -e
 
-REPO_URL="https://github.com/esenbora/etsy-product-creator.git"
+REPO_URL="https://github.com/digitalvendorxx/etsy-product-creator.git"
 TARGET_DIR="${1:-$HOME/etsy-product-creator}"
 
 echo "=== Etsy Product Creator - tek satir kurulum ==="

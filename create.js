@@ -7,6 +7,7 @@ const { composeMockup } = require('./lib/compose-mockup');
 const { scrapeTags } = require('./lib/scrape-tags');
 const { uploadToEtsy } = require('./lib/upload-etsy');
 const { pinToPinterest } = require('./lib/pin-to-pinterest');
+const { ensureLicenseOrExit } = require('./lib/license');
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -30,6 +31,8 @@ function parseArgs() {
 }
 
 async function main() {
+  await ensureLicenseOrExit();
+
   const opts = parseArgs();
 
   if (!opts.ref && !opts.design) {

@@ -56,15 +56,5 @@ public/*.jpeg
 public/*.png
 public/*.webp
 
-# Setup-generated launchers (created by setup.sh / setup.ps1)
-/start.sh
-/start-browser.sh
-/launch.sh
-/stop.sh
-/start.bat
-/start-browser.bat
-/launch.bat
-/stop.bat
-
 # Misc
 dfssdf

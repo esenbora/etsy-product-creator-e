@@ -25,7 +25,10 @@
     "listing-stats": "node scrape-listing-stats.js",
     "decay": "node detect-decay.js",
     "competitor-monitor": "node competitor-monitor.js",
-    "auto-pin": "node auto-pin-new-listings.js"
+    "auto-pin": "node auto-pin-new-listings.js",
+    "license:mock": "node scripts/license-server-mock.js",
+    "license:status": "node -e \"console.log(JSON.stringify(require('./lib/license').getStatus(), null, 2))\"",
+    "doctor": "node scripts/doctor.js"
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",

@@ -19,19 +19,6 @@ function RefreshPath {
 
 Write-Host "=== Etsy Product Creator - Windows kurulum ===" -ForegroundColor Magenta
 
-# 0. Self-heal: eski kurulumlarda yanlis remote URL'i duzelt
-if (Test-Path (Join-Path $Root ".git")) {
-  try {
-    $curUrl = git remote get-url origin 2>$null
-    if ($curUrl -match "digitalvendorxx") {
-      git remote set-url origin "https://github.com/esenbora/etsy-product-creator.git"
-      Write-Host ">> Remote duzeltildi: digitalvendorxx -> esenbora" -ForegroundColor Yellow
-      git fetch --quiet origin main 2>$null
-      git reset --hard origin/main 2>$null
-    }
-  } catch { }
-}
-
 # 1. winget
 if (-not (Need winget)) {
   throw "winget bulunamadi. Windows 10/11 guncel olmali. https://aka.ms/getwinget"
@@ -142,90 +129,6 @@ cd /d "%~dp0"
 npm start
 "@ | Set-Content -Encoding ASCII (Join-Path $Root "start.bat")
 
-# 11. Birlesik launcher
-@"
-@echo off
-setlocal EnableDelayedExpansion
-cd /d "%~dp0"
-if not exist logs mkdir logs
-
-REM Otomatik guncelleme - kendini yeniden yaziyor olabilecegi icin update sonrasi re-exec
-if exist .git (
-  for /f %%H in ('git rev-parse HEAD 2^>nul') do set CURRENT=%%H
-  git fetch --quiet origin main >nul 2>&1
-  for /f %%S in ('git status --porcelain 2^>nul ^| find /c /v ""') do set DIRTY=%%S
-  if "!DIRTY!"=="0" (
-    git pull --ff-only --quiet origin main >nul 2>&1
-    for /f %%N in ('git rev-parse HEAD 2^>nul') do set NEW=%%N
-    if not "!CURRENT!"=="!NEW!" (
-      echo [update] guncelleme alindi, npm install...
-      call npm install --silent --no-fund --no-audit
-      echo [update] yeniden baslatiliyor...
-      timeout /t 1 /nobreak >nul
-      start "" "%~f0"
-      exit /b
-    )
-  )
-)
-
-REM CDP browser (port 9333) - acik degilse baslat
-netstat -an | find ":9333 " | find "LISTENING" >nul
-if errorlevel 1 (
-  start "Etsy CDP Browser" /MIN cmd /c "start-browser.bat ^> logs\browser.log 2^>^&1"
-)
-
-REM Server (port 3000) - acik degilse baslat
-netstat -an | find ":3000 " | find "LISTENING" >nul
-if errorlevel 1 (
-  start "Etsy Server" /MIN cmd /c "start.bat ^> logs\server.log 2^>^&1"
-)
-
-REM Server hazir olunca tarayici
-for /L %%i in (1,1,30) do (
-  timeout /t 1 /nobreak >nul
-  curl -s -o nul http://localhost:3000 >nul 2>&1
-  if not errorlevel 1 goto :ready
-)
-:ready
-start http://localhost:3000
-endlocal
-"@ | Set-Content -Encoding ASCII (Join-Path $Root "launch.bat")
-
-# Stop scripti
-@"
-@echo off
-echo Server ve CDP browser kapatiliyor...
-for /f ""tokens=5"" %%a in ('netstat -ano ^| find "":3000 "" ^| find ""LISTENING""') do taskkill /F /PID %%a 2>nul
-for /f ""tokens=5"" %%a in ('netstat -ano ^| find "":9333 "" ^| find ""LISTENING""') do taskkill /F /PID %%a 2>nul
-echo Bitti.
-"@ | Set-Content -Encoding ASCII (Join-Path $Root "stop.bat")
-
-# 12. Masaustu kisayollari - .bat (her durumda calisir) + .lnk (varsa daha guzel ikon)
-$desktop = [Environment]::GetFolderPath("Desktop")
-if (-not (Test-Path $desktop)) { $desktop = Join-Path $HOME "Desktop" }
-if (-not (Test-Path $desktop)) { New-Item -ItemType Directory -Path $desktop | Out-Null }
-
-# A) .bat fallback - COM/policy engeli olmadan calisir
-$batPath = Join-Path $desktop "Etsy Creator.bat"
-$batContent = "@echo off`r`ncd /d `"$Root`"`r`ncall launch.bat`r`n"
-Set-Content -Path $batPath -Value $batContent -Encoding ASCII
-Ok "Masaustu: 'Etsy Creator.bat' -> $batPath"
-
-# B) .lnk denemesi (basarisiz olursa .bat zaten var)
-try {
-  $lnkPath = Join-Path $desktop "Etsy Creator.lnk"
-  $wsh = New-Object -ComObject WScript.Shell -ErrorAction Stop
-  $lnk = $wsh.CreateShortcut($lnkPath)
-  $lnk.TargetPath = (Join-Path $Root "launch.bat")
-  $lnk.WorkingDirectory = $Root
-  $lnk.WindowStyle = 7
-  $lnk.Description = "Flowiqa Etsy Product Creator"
-  $lnk.Save()
-  Ok "Masaustu: 'Etsy Creator.lnk' (daha guzel ikon)"
-} catch {
-  Warn ".lnk olusturulamadi (COM/policy engeli) - .bat kullanilacak"
-}
-
 Write-Host ""
 Write-Host "=== KURULUM TAMAM ===" -ForegroundColor Green
 Write-Host ""
@@ -234,10 +137,6 @@ Write-Host "  1. .env ac, doldur:"
 Write-Host "       GEMINI_API_KEY=...        (zorunlu)"
 Write-Host "       OPENROUTER_API_KEY=...    (zorunlu)"
 Write-Host "  2. config.json -> templateListingId alanini doldur"
-Write-Host ""
-Write-Host "BASLATMA (3 yoldan biri):"
-Write-Host "  A) Masaustunde 'Etsy Creator' ikonuna cift tik (onerilen)"
-Write-Host "  B) launch.bat  (tek komut, hepsi otomatik)"
-Write-Host "  C) Eski yol:  start-browser.bat + start.bat"
-Write-Host ""
-Write-Host "ILK ACILISTA: Acilan Chrome penceresinde etsy.com + pinterest.com login ol."
+Write-Host "  3. start-browser.bat  (etsy + pinterest login, 1 kere)"
+Write-Host "  4. start.bat          (server :3000)"
+Write-Host "  5. http://localhost:3000"

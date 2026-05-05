@@ -1,50 +1,47 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
-## Claude vs Codex — Rol Dağılımı
+## Codex vs Claude — Rol Dağılımı
 
-İki agent paralel çalışır. Her görev SADECE bir agent'a aittir. Detaylı tablo `AGENTS.md` içinde — burada özet:
+İki agent paralel çalışır. Her görev SADECE bir agent'a aittir. Üst üste binmek yasak.
 
-### Claude (sen) yaparsın
-- **UI / görsel**: `public/*.html`, inline CSS, layout, tipografi, renk
-- **Müşteri-facing copy**: HTML Türkçe metinleri, install/launch script çıktı mesajları, error UI text
-- **Developer UX**: `install.sh`/`install.ps1` user mesajları, `launch.sh` console output, `scripts/doctor.js` rapor formatı
-- **Orchestration**: Plan, multi-step task breakdown, kullanıcıyla diyalog, agent delegasyon kararı
-- **Dokümantasyon**: `README.md`, `docs/*.md`, help text
+### Codex'e Ait (backend / sistem / güvenlik)
 
-### Codex'e delege et (zorunlu)
-| İş | Sebep | Delege komut |
-|----|-------|--------------|
-| `lib/license.js` değişiklik | Crypto + güvenlik kritik | `/codex:rescue` |
-| `lib/upload-etsy*.js`, CDP kodu | Race condition + AbortController | `/codex:rescue` |
-| `lib/scrape-*.js` | Anti-detection, robust parse | `/codex:rescue` |
-| `lib/compose-mockup.js` | Sharp pixel-precision | `/codex:rescue` |
-| Schema migration / sqlite | Data integrity | `/codex:rescue` |
-| Security audit | Codex review > Claude review | `/codex:adversarial-review` |
-| 5+ dosya değiştiren refactor | Long-running, isolated context | `/codex:rescue --background` |
-| E2E test yazma/çalıştırma | Sistematik, retry-aware | `/codex:rescue` |
+| Alan | Bu Repo'da Spesifik Dosyalar | Neden |
+|------|-------------------------------|-------|
+| **Browser automation + CDP** | `lib/upload-etsy*.js`, `lib/pin-to-pinterest*.js`, `launch-browser.js`, `server.js`'in CDP probe + `withEtsyUploadLock` kısımları | Race condition, AbortController timing, deadlock — kritik güvenlik |
+| **Lisans güvenliği** | `lib/license.js`, server-to-server contract (`docs/LICENSE-SYSTEM.md`) | Crypto (ed25519 imza), HWID kilidi, bypass kapıları kapalı tutmak |
+| **Image processing** | `lib/compose-mockup.js`, `lib/detect-positions.js` | Sharp lib, pixel-precision, performans |
+| **Scraping** | `lib/scrape-tags*.js`, `scrape-customhub.js`, `scrape-printnest.js` | Robust parsing, anti-detection, retry logic |
+| **DB / sqlite** | `lib/database.js`, schema değişiklikleri | Migration, indexler, data integrity |
+| **Operasyonel scriptler** | `daily-checklist.js`, `weekly-review.js`, `monthly-review.js`, `pnl.js` | Long-running, retry, error handling |
+| **Auth / API security** | `server.js` API route auth, rate limit, lisans gate | Saldırı yüzeyi |
+| **Test ve audit** | E2E flow testi, security audit, CVE check | Verification rigor |
+| **CI / build** | `package.json` scripts, deploy scriptleri (`install.sh`, `setup.sh` core logic) | Reproducibility |
 
-### Karar Ağacı
+### Claude'a Ait (frontend / UX / orchestration)
 
-```
-Görev geldi:
-├─ Sadece UI/görsel/copy mı? → Claude (sen) yap
-├─ Crypto/auth/CDP/scrape/DB mi? → Codex'e delege ET (zorunlu)
-├─ Karışık?
-│   ├─ Plan + UI prototip → Claude
-│   └─ Backend implementasyon + güvenlik review → Codex
-└─ Şüphedeysen → Codex'e delege ET (default safe)
-```
+| Alan | Bu Repo'da Spesifik Dosyalar | Neden |
+|------|-------------------------------|-------|
+| **UI / görsel** | `public/*.html`, `public/activate.html`, inline CSS | Layout, tipografi, micro-interactions |
+| **Müşteri-facing copy** | `public/*.html` Türkçe metinler, install/launch script çıktı mesajları | Marka sesi, ton |
+| **Developer UX scriptleri** | `install.sh` / `install.ps1` mesajları, `launch.sh` çıktıları, `scripts/doctor.js` rapor formatı | "Müşteri ne görür" |
+| **Orchestration / planning** | Multi-step task breakdown, agent koordinasyon, kullanıcıyla diyalog | İnsanla iletişim |
+| **Dokümantasyon** | `README.md`, `docs/*.md`, hatalı durumlar için help text | Açıklayıcı yazı |
+| **Renk/spacing/responsive** | Tailwind / inline CSS değişiklikleri | Tasarım eleği |
 
-### Bu Repo'daki Net Örnek
+### Karışık (ikili koordinasyon)
 
-- `public/activate.html` → Claude (form layout, hata mesajı kopya, input styling)
-- `lib/license.js` → Codex (signature verify, HWID gen, bypass closure)
-- `server.js` route handler eklemek → Codex (auth check, validation)
-- `server.js` UI route response styling → Claude (HTML şablon)
-- `install.sh` paket manager logic → Codex (cross-OS dependency)
-- `install.sh` "Sirayla:" çıktı mesajı → Claude (kullanıcı görür)
+- **Yeni feature**: Claude planlar + UI prototip → Codex backend + güvenlik review
+- **Bug fix**: Bug "müşteri görür" tarafındaysa Claude, "veri/güvenlik" tarafındaysa Codex
+- **Refactor**: Mimari = Codex, sadece görsel = Claude
+
+### Asla Karıştırma Kuralı
+
+- Codex public HTML/CSS dokunmaz (UI estetiği Claude'un)
+- Claude crypto/auth/CDP/scraping kodunu yazmaz (güvenlik kritik = Codex)
+- Eğer şüphedeysen: **dokunma**, diğer agent'a delege et
 
 ## Approach
 - Think before acting. Read existing files before writing code.
@@ -101,7 +98,7 @@ Setup: copy `.env.example` to `.env` (`GEMINI_API_KEY`, `OPENROUTER_API_KEY`) an
 - `npm run create -- --ref <img> --mockups <m1,m2> --competitor <url> --sku <sku>` - one-shot CLI pipeline (see `create.js` for all flags: `--design`, `--prompt`, `--design-only`, `--skip-upload`, `--skip-tags`)
 - `npm run audit-health` - run the 100-point listing health rubric across active listings; writes `reports/listing-health-{date}.{json,md}`
 - `npm run pnl` / `npm run scrape-customhub` / `npm run scrape-printnest` / `npm run scrape-ehunt` - operational scrapers and P&L
-- `npm run daily` / `npm run weekly` / `npm run monthly` - generate the operating reports under `etsy-projects/ETSY-Claude/` and `etsy-projects/ETSY-Aylin/`
+- `npm run daily` / `npm run weekly` / `npm run monthly` - generate the operating reports under `etsy-projects/ETSY-Codex/` and `etsy-projects/ETSY-Aylin/`
 - `npm run rules-excel` / `npm run holidays` / `npm run x-digest` - utilities under `etsy-rules/`
 
 There is no test suite, linter, or build step. Verify changes by running the affected script or hitting the relevant endpoint.
@@ -136,7 +133,7 @@ Top-level operational scripts (root `*.js` outside `lib/`) are ad-hoc one-shots 
 
 ## Daily/weekly/monthly operations layer
 The repo doubles as Aysham's Etsy operations system. `daily-checklist.js`, `weekly-review.js`, and `monthly-review.js` produce two parallel reports under `etsy-projects/`:
-- `ETSY-Claude/{daily,weekly,monthly}/{date}.md` - what Claude ran, results, escalations.
+- `ETSY-Codex/{daily,weekly,monthly}/{date}.md` - what Codex ran, results, escalations.
 - `ETSY-Aylin/{daily,weekly,monthly}/{date}.md` - the user's prioritized manual action queue.
 
-Failures from automated steps land in `ETSY-Claude/not-done/{date}.md` and become items in the Aylin queue. When changing these scripts, preserve that two-file split. Scheduling is handled by the launchd plists at the repo root (`com.aysham.daily-checklist.plist`, `com.aysham.weekly-pnl.plist`).
+Failures from automated steps land in `ETSY-Codex/not-done/{date}.md` and become items in the Aylin queue. When changing these scripts, preserve that two-file split. Scheduling is handled by the launchd plists at the repo root (`com.aysham.daily-checklist.plist`, `com.aysham.weekly-pnl.plist`).

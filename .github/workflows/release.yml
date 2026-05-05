@@ -51,7 +51,14 @@ jobs:
           cp fresh.ps1 "release-pack/${PACKAGE}/fresh.ps1" || true
 
           tar -czf "${PACKAGE}.tar.gz" -C release-pack "${PACKAGE}"
-          tar tzf "${PACKAGE}.tar.gz" | grep -E '(^|/)(server\.js|create\.js|lib/.*\.js)$' && exit 1 || true
+
+          # Tarball'da source kod (top-level server.js/create.js veya lib/*.js)
+          # OLMAMALI — IP koruma. dist/ icindekiler hariç tutulur.
+          if tar tzf "${PACKAGE}.tar.gz" | grep -E "^${PACKAGE}/(server\.js|create\.js|lib/)" ; then
+            echo "ERROR: tarball'da kaynak dosyalar var, IP sizdiriyor."
+            exit 1
+          fi
+          echo "OK: source files NOT in tarball (sadece dist/)"
 
       - name: Upload release tarball
         env:

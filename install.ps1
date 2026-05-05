@@ -39,9 +39,15 @@ Write-Host "   git: $(git --version)"
 if (Test-Path (Join-Path $TARGET ".git")) {
   Write-Host ">> Mevcut klasor, $BRANCH branch'ine geciliyor + guncelleniyor..." -ForegroundColor Yellow
   Push-Location $TARGET
+  # Single-branch clone'lardaki refspec sorununu coz
+  git remote set-branches --add origin $BRANCH 2>$null
   git fetch origin $BRANCH --tags --quiet
-  git checkout $BRANCH 2>$null
-  if ($LASTEXITCODE -ne 0) { git checkout -b $BRANCH "origin/$BRANCH" }
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host "HATA: git fetch basarisiz. Klasoru elle silip tekrar dene." -ForegroundColor Red
+    Pop-Location
+    exit 1
+  }
+  git checkout -B $BRANCH "origin/$BRANCH"
   git pull --ff-only origin $BRANCH
   Pop-Location
 } elseif (Test-Path $TARGET) {
@@ -49,7 +55,7 @@ if (Test-Path (Join-Path $TARGET ".git")) {
   exit 1
 } else {
   Write-Host ">> Clone: $REPO_URL ($BRANCH)" -ForegroundColor Yellow
-  git clone --branch $BRANCH --single-branch $REPO_URL $TARGET
+  git clone --branch $BRANCH $REPO_URL $TARGET
 }
 
 Set-Location $TARGET

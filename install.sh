@@ -43,14 +43,16 @@ echo "   git: $(git --version)"
 if [ -d "$TARGET_DIR/.git" ]; then
   echo ">> Mevcut klasor, $BRANCH branch'ine geciliyor + guncelleniyor..."
   cd "$TARGET_DIR"
-  git fetch origin "$BRANCH" --tags --quiet
-  git checkout "$BRANCH" 2>/dev/null || git checkout -b "$BRANCH" "origin/$BRANCH"
+  # Single-branch clone'lardaki refspec sorununu coz: branch'i remote tracking listesine ekle
+  git remote set-branches --add origin "$BRANCH" 2>/dev/null || true
+  git fetch origin "$BRANCH" --tags --quiet || die "git fetch basarisiz (network?)"
+  git checkout -B "$BRANCH" "origin/$BRANCH" || die "git checkout basarisiz"
   git pull --ff-only origin "$BRANCH" || die "git pull basarisiz (local degisiklik var mi?)"
 elif [ -e "$TARGET_DIR" ]; then
   die "$TARGET_DIR var ama git deposu degil. Sil veya baska hedef sec: bash install.sh /baska/yol"
 else
   echo ">> Clone: $REPO_URL ($BRANCH)"
-  git clone --branch "$BRANCH" --single-branch "$REPO_URL" "$TARGET_DIR"
+  git clone --branch "$BRANCH" "$REPO_URL" "$TARGET_DIR"
   cd "$TARGET_DIR"
 fi
 

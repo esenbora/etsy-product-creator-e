@@ -1,6 +1,6 @@
 {
   "name": "etsy-product-creator",
-  "version": "1.0.0",
+  "version": "3.16.0",
   "description": "AI-powered Etsy product creator: generate designs, compose mockups, scrape tags, upload listings",
   "main": "create.js",
   "scripts": {

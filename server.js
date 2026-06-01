@@ -19,6 +19,7 @@ const { pinToPinterest } = require('./lib/pin-to-pinterest');
 const { uploadToEtsyWithCookies } = require('./lib/upload-etsy-cookies');
 const { pinToPinterestWithCookies } = require('./lib/pin-to-pinterest-cookies');
 const { detectBrowser, detectAll } = require('./lib/browser-detect');
+const archive = require('./lib/archive');
 const { execFile, spawn } = require('child_process');
 
 const APP_ROOT = path.basename(__dirname) === "dist" ? path.resolve(__dirname, "..") : __dirname;
@@ -105,6 +106,7 @@ const PORT = process.env.PORT || 3001;
 ['designs', 'output', 'uploads', 'mockups', 'data', 'data/batches', 'data/jobs', 'data/qc-results'].forEach(dir => {
   fs.mkdirSync(path.join(APP_ROOT, dir), { recursive: true });
 });
+archive.ensureArchiveRoot();
 
 // ── Presets (file-based) ──
 const PRESETS_FILE = path.join(APP_ROOT, 'data', 'presets.json');
@@ -581,6 +583,11 @@ app.use(express.static(path.join(APP_ROOT, 'public'), { etag: false, maxAge: 0, 
 app.use('/designs', express.static(path.join(APP_ROOT, 'designs')));
 app.use('/output', express.static(path.join(APP_ROOT, 'output')));
 app.use('/mockups', express.static(path.join(APP_ROOT, 'mockups')));
+app.use('/archive-files', (req, res, next) => {
+  const safePath = path.normalize(req.path).replace(/^(\.\.[/\\])+/, '');
+  if (safePath !== req.path) return res.status(400).end();
+  next();
+}, express.static(path.join(APP_ROOT, 'archive'), { index: false }));
 
 // Cookie storage (file-based, no auth needed)
 const COOKIES_FILE = path.join(APP_ROOT, 'data', 'cookies.json');
@@ -1163,13 +1170,30 @@ app.post('/api/regenerate-mockup',
       }
       // Update meta file so upload uses the regenerated mockup
       const metaPath = path.join(APP_ROOT, 'output', `${sku}.meta.json`);
+      let archiveMeta = {};
       try {
         const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
         if (meta.mockupPaths && meta.mockupPaths[index] !== undefined) {
           meta.mockupPaths[index] = '/output/' + correctName;
           fs.writeFileSync(metaPath, JSON.stringify(meta));
         }
+        archiveMeta = meta;
       } catch {}
+      try {
+        archive.archiveJob({
+          sku,
+          sourcePaths: [correctPath],
+          meta: {
+            title: archiveMeta.title || '',
+            tags: archiveMeta.tags || [],
+            etsyListingId: archiveMeta.listingUrl || null,
+            pinterestPinId: null,
+            productType: archiveMeta.detectedProductType || archiveMeta.productType || mode,
+          },
+        });
+      } catch (archiveErr) {
+        console.error('Archive failed:', archiveErr.message || archiveErr);
+      }
       res.json({ path: '/output/' + correctName, name: correctName });
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -1580,6 +1604,36 @@ app.post('/api/create',
 
       // ── Step 2: Compose Mockups ──
       let mockupOutputs = [];
+      const archivePipelineFiles = (extraMeta = {}) => {
+        const sourcePaths = [
+          designPath,
+          backDesignFinalPath,
+          ...mockupOutputs,
+        ].filter(Boolean);
+        if (sourcePaths.length === 0) return null;
+        try {
+          const entry = archive.archiveJob({
+            sku,
+            sourcePaths,
+            meta: {
+              title: meta.title || '',
+              tags: meta.tags || [],
+              etsyListingId: meta.listingUrl || null,
+              pinterestPinId: meta.pinterestPinId || null,
+              productType: meta.detectedProductType || meta.productType || mode,
+              ...extraMeta,
+            },
+          });
+          meta.archiveId = entry.id;
+          saveMeta();
+          send({ type: 'log', message: 'Arsiv kaydedildi: ' + entry.id });
+          return entry;
+        } catch (archiveErr) {
+          console.error('Archive failed:', archiveErr.message || archiveErr);
+          send({ type: 'warning', message: 'Arsiv kaydedilemedi: ' + (archiveErr.message || archiveErr) });
+          return null;
+        }
+      };
       let imageToMockupHandled = false;
 
       // Image-to-Mockup mode: generate lifestyle mockups via Gemini (angle + scene rotation)
@@ -1632,6 +1686,7 @@ app.post('/api/create',
               send({ type: 'mockup', path: '/output/' + name, name, templatePath: '' });
               send({ type: 'log', message: 'Mockup ready: ' + name });
             });
+            archivePipelineFiles();
           } catch (err) {
             console.error('Image-to-mockup error:', err.message);
             send({ type: 'step-error', step: 'mockup', message: 'Gorselden mockup uretimi basarisiz: ' + err.message });
@@ -1758,6 +1813,7 @@ app.post('/api/create',
             send({ type: 'mockup', path: '/output/' + name, name, templatePath: mockupTemplatePaths[i] || '' });
             send({ type: 'log', message: 'Mockup ready: ' + name });
           });
+          archivePipelineFiles();
         } catch (err) {
           console.error('AI mockup error:', err.message);
           send({ type: 'step-error', step: 'mockup', message: 'AI mockup basarisiz: ' + err.message });
@@ -1770,6 +1826,7 @@ app.post('/api/create',
       if (!fullAuto && (!continueFrom || continueFrom === 'placement-approve') && mockupOutputs.length > 0) {
         updateJob(sku, { status: 'paused', currentStep: 'mockup', completedSteps: ['generate', 'mockup'], mockupPaths: mockupOutputs.map(p => '/output/' + path.basename(p)) });
         send({ type: 'pause', step: 'mockup', message: 'Mockup\'lar hazir — kontrol edin ve devam edin' });
+        archivePipelineFiles();
         send({ type: 'done' });
         cleanup(allTempFiles);
         pipelineLock = false;
@@ -2031,6 +2088,7 @@ app.post('/api/create',
       if (!fullAuto && continueFrom !== 'upload' && continueFrom !== 'upload-and-pin' && continueFrom !== 'pinterest' && tags.length > 0 && title) {
         updateJob(sku, { status: 'paused', currentStep: 'tags', completedSteps: ['generate', 'mockup', 'tags'], mockupPaths: mockupOutputs.map(p => '/output/' + path.basename(p)) });
         send({ type: 'pause', step: 'tags', message: 'Etiketler ve baslik hazir — duzenleyin ve devam edin' });
+        archivePipelineFiles({ title, tags });
         send({ type: 'done' });
         cleanup(allTempFiles);
         pipelineLock = false;
@@ -2137,6 +2195,7 @@ app.post('/api/create',
       if (!fullAuto && continueFrom !== 'upload-and-pin' && continueFrom !== 'pinterest' && listingUrl && listingUrl.includes('etsy.com')) {
         updateJob(sku, { status: 'paused', currentStep: 'upload', completedSteps: ['generate', 'mockup', 'tags', 'upload'], listingUrl });
         send({ type: 'pause', step: 'upload', message: 'Etsy\'ye yuklendi — Pinterest\'e pinlemek ister misiniz?' });
+        archivePipelineFiles({ title, tags, etsyListingId: listingUrl });
         send({ type: 'done' });
         cleanup(allTempFiles);
         pipelineLock = false;
@@ -2206,6 +2265,12 @@ app.post('/api/create',
         }
       }
 
+      archivePipelineFiles({
+        title,
+        tags,
+        etsyListingId: listingUrl || null,
+        pinterestPinId: pinterestDone ? 'confirmed' : null,
+      });
       send({ type: 'done' });
     } catch (err) {
       console.error('Pipeline error stack:', err.stack);
@@ -2788,6 +2853,82 @@ app.post('/api/cleanup', (req, res) => {
   const maxAgeDays = req.body.maxAgeDays || 30;
   const result = executeCleanup(maxAgeDays);
   res.json(result);
+});
+
+function archiveFileDto(date, sku, absPath) {
+  const name = path.basename(absPath);
+  let size = 0;
+  try { size = fs.statSync(absPath).size; } catch {}
+  return {
+    name,
+    size,
+    url: '/api/archive/' + encodeURIComponent(date) + '/' + encodeURIComponent(sku) + '/file/' + encodeURIComponent(name),
+    downloadUrl: '/api/archive/' + encodeURIComponent(date) + '/' + encodeURIComponent(sku) + '/file/' + encodeURIComponent(name) + '?download=1',
+  };
+}
+
+function archiveEntryDto(entry) {
+  return {
+    ...entry,
+    files: (entry.files || []).map(file => ({
+      name: file.name,
+      path: file.path,
+      size: file.size || 0,
+    })),
+  };
+}
+
+app.get('/api/archive', async (req, res) => {
+  try {
+    const date = req.query.date || '';
+    const result = await archive.listArchive({
+      limit: req.query.limit,
+      offset: req.query.offset,
+      dateFrom: date || req.query.dateFrom,
+      dateTo: date || req.query.dateTo,
+      search: req.query.search,
+    });
+    res.json({ ...result, items: result.items.map(archiveEntryDto) });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/archive/:date/:sku', async (req, res) => {
+  try {
+    const entry = await archive.getArchiveEntry(req.params.date, req.params.sku);
+    if (!entry) return res.status(404).json({ error: 'Arsiv bulunamadi' });
+    res.json({
+      ...entry,
+      files: entry.files.map(file => archiveFileDto(entry.date, entry.sku, file)),
+    });
+  } catch (e) {
+    res.status(404).json({ error: e.message });
+  }
+});
+
+app.get('/api/archive/:date/:sku/file/:filename', async (req, res) => {
+  try {
+    const entry = await archive.getArchiveEntry(req.params.date, req.params.sku);
+    if (!entry) return res.status(404).json({ error: 'Arsiv bulunamadi' });
+    const safeFilename = path.basename(req.params.filename);
+    if (!safeFilename || safeFilename !== req.params.filename) return res.status(400).end();
+    const allowed = entry.files.map(f => path.basename(f));
+    if (!allowed.includes(safeFilename)) return res.status(403).end();
+    const filePath = path.join(archive.ARCHIVE_ROOT, req.params.date, req.params.sku, safeFilename);
+    if (req.query.download === '1') return res.download(filePath, safeFilename);
+    res.sendFile(filePath);
+  } catch (e) {
+    res.status(404).json({ error: e.message });
+  }
+});
+
+app.delete('/api/archive/:date/:sku', async (req, res) => {
+  try {
+    res.json(await archive.deleteArchiveEntry(req.params.date, req.params.sku));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── OPS DASHBOARD ──────────────────────────────────────────────────────────

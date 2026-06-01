@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Galeri - Etsy Creator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #fdf7ee;
+    --bg-card: #ffffff;
+    --bg-soft: #f5ecdc;
+    --bg-deep: #1a1714;
+    --ink: #1a1714;
+    --ink-mid: #6b6259;
+    --ink-dim: #a8a094;
+    --line: #e8dec8;
+    --line-strong: #d4c8ac;
+    --accent: #ff5a1f;
+    --accent-soft: #ffe4d3;
+    --accent-deep: #c43d0d;
+    --green: #2ea44f;
+    --red: #dc2626;
+    --shadow-sm: 0 1px 2px rgba(26,23,20,0.04);
+    --shadow-md: 0 4px 16px rgba(26,23,20,0.06);
+    --shadow-lg: 0 12px 32px rgba(26,23,20,0.08);
+    --font: ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  }
+  [data-theme="dark"] {
+    --bg: #1a1714;
+    --bg-card: #2b2520;
+    --bg-soft: #221d18;
+    --bg-deep: #0f0d0b;
+    --ink: #fbf6ec;
+    --ink-mid: #a8a094;
+    --ink-dim: #6b6259;
+    --line: #3a3128;
+    --line-strong: #4d4136;
+  }
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  body { display: flex; align-items: stretch; }
+  .side {
+    position: sticky; top: 0;
+    width: 240px; flex-shrink: 0;
+    height: 100vh;
+    background: var(--bg-soft);
+    border-right: 1px solid var(--line);
+    padding: 1.1rem 0.85rem 1rem;
+    display: flex; flex-direction: column; gap: 0.35rem;
+  }
+  .side-brand {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.4rem 0.55rem 0.95rem;
+    font-weight: 700;
+  }
+  .side-mark {
+    width: 30px; height: 30px; border-radius: 10px;
+    background: var(--accent); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 800; transform: rotate(-6deg);
+    box-shadow: var(--shadow-md);
+  }
+  .side-tag {
+    margin-left: auto; font-size: 0.6rem; padding: 0.15rem 0.4rem;
+    border-radius: 6px; background: var(--accent-soft);
+    color: var(--accent-deep); font-weight: 700; letter-spacing: 0.08em;
+  }
+  .side-nav { display: flex; flex-direction: column; gap: 0.1rem; flex: 1; }
+  .side-label {
+    font-size: 0.66rem; color: var(--ink-dim);
+    text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;
+    padding: 0.7rem 0.65rem 0.25rem;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 0.65rem;
+    padding: 0.55rem 0.7rem;
+    border-radius: 10px;
+    color: var(--ink); cursor: pointer;
+    border: 0; background: transparent;
+    font-family: inherit; font-size: 0.9rem; font-weight: 500;
+    text-align: left; text-decoration: none;
+    transition: background 100ms;
+  }
+  .nav-item:hover { background: var(--bg-card); }
+  .nav-item.active { background: var(--accent); color: #fff; box-shadow: var(--shadow-sm); }
+  .nav-item svg { width: 16px; height: 16px; opacity: 0.7; flex-shrink: 0; }
+  .main { flex: 1; min-width: 0; min-height: 100vh; }
+  .page { max-width: 1180px; margin: 0 auto; padding: 1.25rem 1.5rem 4rem; }
+  .page-head {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 1rem; margin-bottom: 1.25rem;
+  }
+  .page-title { font-size: 1.6rem; font-weight: 700; letter-spacing: 0; }
+  .page-sub { color: var(--ink-mid); font-size: 0.92rem; margin-top: 0.2rem; }
+  .filters {
+    background: var(--bg-card); border: 1px solid var(--line);
+    border-radius: 18px; padding: 0.9rem;
+    display: grid; grid-template-columns: minmax(180px, 1fr) 180px auto;
+    gap: 0.7rem; align-items: end; box-shadow: var(--shadow-sm);
+    margin-bottom: 1rem;
+  }
+  label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.78rem; color: var(--ink-mid); font-weight: 600; }
+  input {
+    background: var(--bg-soft); border: 1.5px solid transparent; border-radius: 10px;
+    padding: 0.65rem 0.75rem; color: var(--ink); font-family: inherit; font-size: 0.9rem;
+    outline: 0;
+  }
+  input:focus { background: var(--bg-card); border-color: var(--accent); }
+  .btn {
+    border: 0; border-radius: 999px; min-height: 40px;
+    padding: 0 1rem; font-family: inherit; font-weight: 600;
+    cursor: pointer; color: var(--ink); background: var(--bg-card);
+    border: 1px solid var(--line);
+  }
+  .btn:hover { border-color: var(--line-strong); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-danger { color: var(--red); border-color: rgba(220,38,38,0.25); }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 0.85rem;
+  }
+  .card {
+    background: var(--bg-card); border: 1px solid var(--line);
+    border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-sm);
+    display: flex; flex-direction: column; min-height: 310px;
+  }
+  .thumb {
+    width: 100%; aspect-ratio: 1; background: var(--bg-soft);
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb-empty { color: var(--ink-mid); font-size: 0.86rem; }
+  .card-body { padding: 0.8rem; display: flex; flex-direction: column; gap: 0.45rem; flex: 1; }
+  .sku { font-weight: 700; overflow-wrap: anywhere; }
+  .meta { color: var(--ink-mid); font-size: 0.82rem; }
+  .actions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: auto; }
+  .actions .btn { min-height: 34px; font-size: 0.78rem; padding: 0 0.75rem; }
+  .state {
+    background: var(--bg-card); border: 1px solid var(--line);
+    border-radius: 16px; padding: 2rem; text-align: center;
+    color: var(--ink-mid);
+  }
+  .modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.48);
+    display: none; align-items: center; justify-content: center;
+    padding: 1rem; z-index: 80;
+  }
+  .modal.open { display: flex; }
+  .modal-box {
+    width: min(980px, 100%); max-height: 90vh; overflow: auto;
+    background: var(--bg); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 18px;
+    box-shadow: var(--shadow-lg);
+  }
+  .modal-head {
+    display: flex; align-items: center; gap: 0.8rem;
+    padding: 0.9rem 1rem; border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; background: var(--bg); z-index: 2;
+  }
+  .modal-title { font-weight: 700; flex: 1; overflow-wrap: anywhere; }
+  .modal-body { padding: 1rem; }
+  .file-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.7rem;
+  }
+  .file-tile {
+    background: var(--bg-card); border: 1px solid var(--line);
+    border-radius: 12px; overflow: hidden;
+  }
+  .file-tile a { color: inherit; text-decoration: none; }
+  .file-tile img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: var(--bg-soft); }
+  .file-name { padding: 0.5rem; font-size: 0.78rem; color: var(--ink-mid); overflow-wrap: anywhere; }
+  .toast {
+    position: fixed; right: 1rem; bottom: 1rem;
+    background: var(--bg-deep); color: #fbf6ec;
+    padding: 0.7rem 0.9rem; border-radius: 12px;
+    box-shadow: var(--shadow-lg); display: none; z-index: 90;
+    max-width: min(420px, calc(100vw - 2rem));
+  }
+  .toast.show { display: block; }
+  @media (max-width: 800px) {
+    body { display: block; }
+    .side { position: static; width: 100%; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+    .side-nav { flex-direction: row; overflow-x: auto; }
+    .side-label, .side-tag { display: none; }
+    .page { padding: 1rem; }
+    .page-head { align-items: flex-start; flex-direction: column; }
+    .filters { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<aside class="side">
+  <div class="side-brand">
+    <span class="side-mark">E</span>
+    <span>Etsy Creator</span>
+    <span class="side-tag">PRO</span>
+  </div>
+  <nav class="side-nav">
+    <div class="side-label">Genel</div>
+    <a class="nav-item" href="/app.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      Yeni urun
+    </a>
+    <a class="nav-item active" href="/archive.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      Galeri
+    </a>
+    <a class="nav-item" href="/app.html#pending">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>
+      Yarim Kalanlar
+    </a>
+  </nav>
+</aside>
+
+<main class="main">
+  <div class="page">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Galeri</h1>
+        <p class="page-sub">Arsivlenen tasarim ve mockup gorselleri</p>
+      </div>
+      <button class="btn" onclick="toggleTheme()">Tema</button>
+    </div>
+
+    <form class="filters" onsubmit="event.preventDefault(); loadArchive();">
+      <label>
+        Urun
+        <input id="searchInput" type="search" placeholder="SKU veya baslik">
+      </label>
+      <label>
+        Tarih
+        <input id="dateInput" type="date">
+      </label>
+      <button class="btn btn-primary" type="submit">Filtrele</button>
+    </form>
+
+    <div id="status" class="state">Yukleniyor...</div>
+    <div id="grid" class="grid" style="display:none;"></div>
+  </div>
+</main>
+
+<div id="modal" class="modal" onclick="if(event.target===this) closeDetail();">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle">Detay</div>
+      <a id="etsyLink" class="btn" href="#" target="_blank" style="display:none;">Etsy</a>
+      <button class="btn" onclick="closeDetail()">Kapat</button>
+    </div>
+    <div class="modal-body">
+      <div id="fileGrid" class="file-grid"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+(function () {
+  document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
+})();
+
+let archiveItems = [];
+
+function esc(value) {
+  return String(value || '').replace(/[&<>"']/g, function (ch) {
+    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+  });
+}
+
+function toast(message) {
+  const el = document.getElementById('toast');
+  el.textContent = message;
+  el.classList.add('show');
+  setTimeout(function () { el.classList.remove('show'); }, 2600);
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+}
+
+function etsyUrl(value) {
+  if (!value) return '';
+  const raw = String(value);
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return 'https://www.etsy.com/listing/' + encodeURIComponent(raw);
+}
+
+function firstImage(entry) {
+  const files = entry.files || [];
+  const hit = files.find(function (f) { return /\.(png|jpe?g|webp|avif|gif)$/i.test(f.name || ''); }) || files[0];
+  if (!hit) return '';
+  return '/api/archive/' + encodeURIComponent(entry.date) + '/' + encodeURIComponent(entry.sku) + '/file/' + encodeURIComponent(hit.name);
+}
+
+async function loadArchive() {
+  const status = document.getElementById('status');
+  const grid = document.getElementById('grid');
+  status.style.display = '';
+  grid.style.display = 'none';
+  status.textContent = 'Yukleniyor...';
+
+  const params = new URLSearchParams();
+  const search = document.getElementById('searchInput').value.trim();
+  const date = document.getElementById('dateInput').value;
+  if (search) params.set('search', search);
+  if (date) params.set('date', date);
+  params.set('limit', '80');
+
+  try {
+    const res = await fetch('/api/archive?' + params.toString());
+    if (!res.ok) throw new Error('Arsiv okunamadi');
+    const data = await res.json();
+    archiveItems = data.items || [];
+    if (archiveItems.length === 0) {
+      status.innerHTML = '<div>Arsiv bos</div><button class="btn" style="margin-top:0.8rem;" onclick="loadArchive()">Tekrar dene</button>';
+      return;
+    }
+    status.style.display = 'none';
+    grid.style.display = '';
+    renderGrid();
+  } catch (err) {
+    status.innerHTML = '<div>Hata: ' + esc(err.message) + '</div><button class="btn" style="margin-top:0.8rem;" onclick="loadArchive()">Tekrar dene</button>';
+  }
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = archiveItems.map(function (entry, idx) {
+    const thumb = firstImage(entry);
+    const firstFile = (entry.files || [])[0];
+    const dl = firstFile
+      ? '/api/archive/' + encodeURIComponent(entry.date) + '/' + encodeURIComponent(entry.sku) + '/file/' + encodeURIComponent(firstFile.name) + '?download=1'
+      : '#';
+    return '<article class="card">' +
+      '<div class="thumb">' + (thumb ? '<img src="' + esc(thumb) + '" loading="lazy" alt="">' : '<div class="thumb-empty">Gorsel yok</div>') + '</div>' +
+      '<div class="card-body">' +
+        '<div class="sku">' + esc(entry.sku) + '</div>' +
+        '<div class="meta">Tarih: ' + esc(entry.date) + '</div>' +
+        '<div class="meta">Dosya: ' + ((entry.files || []).length) + '</div>' +
+        '<div class="actions">' +
+          '<button class="btn" onclick="openDetail(' + idx + ')">Detay</button>' +
+          '<a class="btn" href="' + esc(dl) + '">Indir</a>' +
+          '<button class="btn btn-danger" onclick="deleteEntry(' + idx + ')">Sil</button>' +
+        '</div>' +
+      '</div>' +
+    '</article>';
+  }).join('');
+}
+
+async function openDetail(idx) {
+  const entry = archiveItems[idx];
+  if (!entry) return;
+  try {
+    const res = await fetch('/api/archive/' + encodeURIComponent(entry.date) + '/' + encodeURIComponent(entry.sku));
+    if (!res.ok) throw new Error('Detay alinamadi');
+    const detail = await res.json();
+    document.getElementById('modalTitle').textContent = detail.sku + ' - ' + detail.date;
+    const etsy = etsyUrl(detail.meta && detail.meta.etsyListingId);
+    const link = document.getElementById('etsyLink');
+    if (etsy) {
+      link.href = etsy;
+      link.style.display = '';
+    } else {
+      link.style.display = 'none';
+    }
+    document.getElementById('fileGrid').innerHTML = (detail.files || []).map(function (file) {
+      return '<div class="file-tile">' +
+        '<a href="' + esc(file.url) + '" target="_blank"><img src="' + esc(file.url) + '" loading="lazy" alt=""></a>' +
+        '<div class="file-name">' + esc(file.name) + '</div>' +
+        '<div style="padding:0 0.5rem 0.5rem;"><a class="btn" href="' + esc(file.downloadUrl) + '">Indir</a></div>' +
+      '</div>';
+    }).join('');
+    document.getElementById('modal').classList.add('open');
+  } catch (err) {
+    toast('Hata: ' + err.message);
+  }
+}
+
+function closeDetail() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+async function deleteEntry(idx) {
+  const entry = archiveItems[idx];
+  if (!entry) return;
+  if (!confirm(entry.sku + ' silinsin mi?')) return;
+  try {
+    const res = await fetch('/api/archive/' + encodeURIComponent(entry.date) + '/' + encodeURIComponent(entry.sku), { method: 'DELETE' });
+    if (!res.ok) throw new Error('Arsiv silinemedi');
+    toast('Silindi');
+    await loadArchive();
+  } catch (err) {
+    toast('Hata: ' + err.message);
+  }
+}
+
+loadArchive();
+</script>
+</body>
+</html>

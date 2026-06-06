@@ -1,14 +1,14 @@
 # Etsy Product Creator - Windows tek satir kurulum
 # Kullanim:
-#   iwr -useb https://raw.githubusercontent.com/esenbora/etsy-product-creator/main/install.ps1 | iex
+#   iwr -useb https://raw.githubusercontent.com/esenbora/etsy-product-creator-e/main/install.ps1 | iex
 # Ozel hedef:
 #   $env:TARGET="C:\etsy-tool"; iwr ... | iex
 
 $ErrorActionPreference = "Stop"
 
-$REPO_URL = "https://github.com/esenbora/etsy-product-creator.git"
+$REPO_URL = "https://github.com/esenbora/etsy-product-creator-e.git"
 $BRANCH = if ($env:BRANCH) { $env:BRANCH } else { "release" }
-$TARGET = if ($env:TARGET) { $env:TARGET } else { Join-Path $HOME "etsy-product-creator" }
+$TARGET = if ($env:TARGET) { $env:TARGET } else { Join-Path $HOME "etsy-product-creator-e" }
 
 Write-Host "=== Etsy Product Creator - Windows tek satir kurulum ===" -ForegroundColor Cyan
 Write-Host "Hedef: $TARGET"

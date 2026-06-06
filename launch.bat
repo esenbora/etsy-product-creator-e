@@ -31,7 +31,7 @@ if "%REMOTE_VERSION%"=="" (
     set "LICENSE_KEY=%KEY%"
     powershell -ExecutionPolicy Bypass -Command "iwr -useb https://www.flowiqa.com/install/etsy-product-creator-e.ps1 | iex" >%TEMP%\epc-update.log 2>&1
     if errorlevel 1 (
-      echo    Guncelleme basarisiz, eski surum ile devam (%%TEMP%%\epc-update.log incele)
+      echo    Guncelleme basarisiz, eski surum ile devam ^(%%TEMP%%\epc-update.log incele^)
     ) else (
       echo %REMOTE_VERSION%>data\.version
       echo    Guncelleme basarili: %REMOTE_VERSION%

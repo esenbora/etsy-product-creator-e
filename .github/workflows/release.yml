@@ -32,7 +32,7 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
-          PACKAGE="etsy-product-creator-${VERSION}"
+          PACKAGE="etsy-product-creator-e-${VERSION}"
           rm -rf release-pack "${PACKAGE}.tar.gz"
           mkdir -p "release-pack/${PACKAGE}"
 
@@ -66,6 +66,6 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
-          TARBALL="etsy-product-creator-${VERSION}.tar.gz"
+          TARBALL="etsy-product-creator-e-${VERSION}.tar.gz"
           gh release create "${GITHUB_REF_NAME}" "${TARBALL}" --generate-notes || \
             gh release upload "${GITHUB_REF_NAME}" "${TARBALL}" --clobber

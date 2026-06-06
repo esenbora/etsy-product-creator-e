@@ -14,7 +14,7 @@ if exist data\.version (
 )
 
 set REMOTE_VERSION=
-for /f "tokens=*" %%v in ('node -e "fetch('https://www.flowiqa.com/api/version?app=etsy-product-creator').then(r=^>r.json()).then(j=^>console.log(j.version^|^|'')).catch(()=^>console.log(''))" 2^>nul') do set REMOTE_VERSION=%%v
+for /f "tokens=*" %%v in ('node -e "fetch('https://www.flowiqa.com/api/version?app=etsy-product-creator-e').then(r=^>r.json()).then(j=^>console.log(j.version^|^|'')).catch(()=^>console.log(''))" 2^>nul') do set REMOTE_VERSION=%%v
 
 if "%REMOTE_VERSION%"=="" (
   echo    Surum kontrol atlandi (offline?)
@@ -29,7 +29,7 @@ if "%REMOTE_VERSION%"=="" (
   ) else (
     set "TARGET=%CD%"
     set "LICENSE_KEY=%KEY%"
-    powershell -ExecutionPolicy Bypass -Command "iwr -useb https://www.flowiqa.com/install/etsy-product-creator.ps1 | iex" >%TEMP%\epc-update.log 2>&1
+    powershell -ExecutionPolicy Bypass -Command "iwr -useb https://www.flowiqa.com/install/etsy-product-creator-e.ps1 | iex" >%TEMP%\epc-update.log 2>&1
     if errorlevel 1 (
       echo    Guncelleme basarisiz, eski surum ile devam (%%TEMP%%\epc-update.log incele)
     ) else (
@@ -83,5 +83,8 @@ REM 4. Tarayicida ac
 start "" "http://localhost:%SERVER_PORT%"
 echo.
 echo Hazir: http://localhost:%SERVER_PORT%
+echo.
+echo (Pencereyi kapatmak icin ENTER'a bas)
+pause >nul
 
 endlocal

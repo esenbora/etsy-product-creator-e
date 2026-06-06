@@ -22,7 +22,7 @@ SERVER_PORT="${PORT:-3001}"
 # 1. Update check (flowiqa.com tarball)
 say "Guncelleme kontrol..."
 LOCAL_VERSION=$(cat data/.version 2>/dev/null || echo "")
-REMOTE_VERSION=$(curl -sf --max-time 5 "https://www.flowiqa.com/api/version?app=etsy-product-creator" 2>/dev/null | node -e "try { let d=''; process.stdin.on('data', c=>d+=c); process.stdin.on('end', ()=>{ try { console.log(JSON.parse(d).version||'') } catch { console.log('') } }) }" 2>/dev/null || echo "")
+REMOTE_VERSION=$(curl -sf --max-time 5 "https://www.flowiqa.com/api/version?app=etsy-product-creator-e" 2>/dev/null | node -e "try { let d=''; process.stdin.on('data', c=>d+=c); process.stdin.on('end', ()=>{ try { console.log(JSON.parse(d).version||'') } catch { console.log('') } }) }" 2>/dev/null || echo "")
 
 if [ -n "$REMOTE_VERSION" ] && [ "$LOCAL_VERSION" != "$REMOTE_VERSION" ]; then
   say "Yeni surum mevcut: $LOCAL_VERSION -> $REMOTE_VERSION, guncelleniyor..."
@@ -31,7 +31,7 @@ if [ -n "$REMOTE_VERSION" ] && [ "$LOCAL_VERSION" != "$REMOTE_VERSION" ]; then
     warn "Lisans cache yok, guncelleme atlandi (/activate'ten sonra tekrar dene)"
   else
     # Re-run installer with stored key — atomik replace, .env/config korunur
-    if curl -fsSL "https://www.flowiqa.com/install/etsy-product-creator.sh" | TARGET="$(pwd)" bash -s "$KEY" >/tmp/epc-update.log 2>&1; then
+    if curl -fsSL "https://www.flowiqa.com/install/etsy-product-creator-e.sh" | TARGET="$(pwd)" bash -s "$KEY" >/tmp/epc-update.log 2>&1; then
       echo "$REMOTE_VERSION" > data/.version
       ok "Guncelleme basarili: $REMOTE_VERSION"
     else

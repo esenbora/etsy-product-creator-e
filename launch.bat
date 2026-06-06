@@ -17,7 +17,7 @@ set REMOTE_VERSION=
 for /f "tokens=*" %%v in ('node -e "fetch('https://www.flowiqa.com/api/version?app=etsy-product-creator-e').then(r=^>r.json()).then(j=^>console.log(j.version^|^|'')).catch(()=^>console.log(''))" 2^>nul') do set REMOTE_VERSION=%%v
 
 if "%REMOTE_VERSION%"=="" (
-  echo    Surum kontrol atlandi (offline?)
+  echo    Surum kontrol atlandi ^(offline?^)
 ) else if "%LOCAL_VERSION%"=="%REMOTE_VERSION%" (
   echo    Guncel %LOCAL_VERSION%
 ) else (

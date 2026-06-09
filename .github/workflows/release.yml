@@ -62,8 +62,10 @@ jobs:
 
           # Bundled dist entry'leri EKSIKSIZ olmali. Biri eksikse customer boot kirik
           # (npm run start:dist / browser:dist dosya bulamaz) — sessiz ship ETME, FAIL et.
+          # NOT: tar | grep -q SIGPIPE + pipefail tuzagindan kacinmak icin listeyi dosyaya yaz.
+          tar tzf "${PACKAGE}.tar.gz" > /tmp/tarlist.txt
           for f in dist/server.js dist/create.js dist/launch-browser.js; do
-            if ! tar tzf "${PACKAGE}.tar.gz" | grep -qE "^${PACKAGE}/${f}$" ; then
+            if ! grep -qE "^${PACKAGE}/${f}$" /tmp/tarlist.txt ; then
               echo "ERROR: tarball'da ${f} eksik — boot kirik ship edilecekti. build:dist entryPoints kontrol."
               exit 1
             fi

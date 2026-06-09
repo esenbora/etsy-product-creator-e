@@ -60,6 +60,16 @@ jobs:
           fi
           echo "OK: source files NOT in tarball (sadece dist/)"
 
+          # Bundled dist entry'leri EKSIKSIZ olmali. Biri eksikse customer boot kirik
+          # (npm run start:dist / browser:dist dosya bulamaz) — sessiz ship ETME, FAIL et.
+          for f in dist/server.js dist/create.js dist/launch-browser.js; do
+            if ! tar tzf "${PACKAGE}.tar.gz" | grep -qE "^${PACKAGE}/${f}$" ; then
+              echo "ERROR: tarball'da ${f} eksik — boot kirik ship edilecekti. build:dist entryPoints kontrol."
+              exit 1
+            fi
+          done
+          echo "OK: dist/server.js + dist/create.js + dist/launch-browser.js mevcut"
+
       - name: Upload release tarball
         env:
           GH_TOKEN: ${{ github.token }}

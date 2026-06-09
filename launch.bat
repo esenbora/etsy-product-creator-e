@@ -58,7 +58,7 @@ if !ERRORLEVEL! equ 0 (
   echo    Zaten acik
 ) else (
   echo    Aciliyor...
-  start "EPC Browser" /MIN cmd /c "npm run browser"
+  start "EPC Browser" /MIN cmd /c "npm run browser:dist > %TEMP%\epc-browser.log 2>&1"
   set "CDP_READY=0"
   for /l %%i in (1,1,30) do (
     if "!CDP_READY!"=="0" (
@@ -82,7 +82,7 @@ if !ERRORLEVEL! equ 0 (
   echo    Zaten calisiyor
 ) else (
   echo    Baslatiliyor...
-  start "EPC Server" /MIN cmd /c "npm start"
+  start "EPC Server" /MIN cmd /c "npm run start:dist > %TEMP%\epc-server.log 2>&1"
   set "SRV_READY=0"
   for /l %%i in (1,1,30) do (
     if "!SRV_READY!"=="0" (
@@ -96,7 +96,7 @@ if !ERRORLEVEL! equ 0 (
   ) else (
     echo    HATA: Server 30sn'de baslamadi
     echo    Detay: %%TEMP%%\epc-server.log
-    echo    Manuel kontrol: npm start
+    echo    Manuel kontrol: npm run start:dist
   )
 )
 

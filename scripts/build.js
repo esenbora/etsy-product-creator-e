@@ -18,6 +18,7 @@ async function build() {
     entryPoints: [
       path.join(root, 'server.js'),
       path.join(root, 'create.js'),
+      path.join(root, 'launch-browser.js'),
     ],
     outdir: path.join(root, 'dist'),
     entryNames: '[name]',

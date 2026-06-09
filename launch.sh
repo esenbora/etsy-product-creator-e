@@ -48,7 +48,7 @@ if curl -sf --max-time 1 "http://localhost:$CDP_PORT/json/version" >/dev/null 2>
   ok "Zaten acik"
 else
   say "Aciliyor..."
-  nohup npm run browser > /tmp/epc-browser.log 2>&1 &
+  nohup npm run browser:dist > /tmp/epc-browser.log 2>&1 &
   disown 2>/dev/null || true
   for _ in $(seq 1 30); do
     sleep 0.5
@@ -64,7 +64,7 @@ say "Server ($SERVER_PORT)..."
 if curl -sf --max-time 1 "http://localhost:$SERVER_PORT/" -o /dev/null; then
   ok "Zaten calisiyor"
 else
-  nohup npm start > /tmp/epc-server.log 2>&1 &
+  nohup npm run start:dist > /tmp/epc-server.log 2>&1 &
   disown 2>/dev/null || true
   for _ in $(seq 1 30); do
     sleep 0.5

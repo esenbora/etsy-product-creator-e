@@ -13,8 +13,11 @@ function Ok($m)   { Write-Host "   $m" -ForegroundColor Green }
 function Warn($m) { Write-Host "   UYARI: $m" -ForegroundColor Yellow }
 function Need($c) { $null -ne (Get-Command $c -ErrorAction SilentlyContinue) }
 function RefreshPath {
-  $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" +
-              [System.Environment]::GetEnvironmentVariable("Path","User")
+  # winget shims + nodejs install dir'i prepend et: ayni-session node/npm resolve garantisi
+  $machine = [System.Environment]::GetEnvironmentVariable("Path","Machine")
+  $user    = [System.Environment]::GetEnvironmentVariable("Path","User")
+  $extra   = @("$env:ProgramFiles\nodejs", "$env:LOCALAPPDATA\Microsoft\WinGet\Links") -join ';'
+  $env:Path = ($extra + ';' + $machine + ';' + $user)
 }
 
 Write-Host "=== Etsy Product Creator - Windows kurulum ===" -ForegroundColor Magenta
@@ -43,6 +46,11 @@ if ($needNode) {
   winget install --id OpenJS.NodeJS.LTS -e --source winget --accept-package-agreements --accept-source-agreements
   RefreshPath
 }
+# Ayni-session Node/npm resolve guard: winget kurdu ama PATH'e inmediyse fresh Windows'ta
+# npm install sessizce patlar -> node_modules olusmaz -> app hic acilmaz. Net relaunch mesaji ver.
+if (-not (Need node) -or -not (Need npm)) {
+  throw "Node kuruldu ama PATH'te gorunmuyor. Bu PowerShell penceresini KAPAT, yenisini ac, setup.ps1'i tekrar calistir."
+}
 Ok "Node: $(node -v)"
 
 # 4. Chrome / Opera tespit
@@ -67,12 +75,25 @@ if (-not $BrowserPath) {
   RefreshPath
   $BrowserPath = Detect-Browser
 }
+# Son care: her Windows'ta bulunan Edge'e dus (bos operaPath -> CDP olu kalmasin)
+if (-not $BrowserPath) {
+  $edge = @(
+    "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+    "C:\Program Files\Microsoft\Edge\Application\msedge.exe"
+  ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+  if ($edge) { $BrowserPath = $edge; Warn "Tarayici bulunamadi, Edge'e dusuldu: $edge" }
+}
 if ($BrowserPath) { Ok "Browser: $BrowserPath" } else { Warn "Browser tespit edilemedi, config.json elle doldur" }
 
-# 5. npm install
+# 5. npm install (--omit=dev: esbuild vb. devDep gereksiz; exit-code kontrol: yarim install'i yakala)
 if (-not (Test-Path (Join-Path $Root "node_modules"))) {
   Say "npm install..."
-  npm install
+  npm install --omit=dev
+  if ($LASTEXITCODE -ne 0) {
+    # Yarim node_modules'u temizle ki tekrar calistirinca gercekten reinstall etsin (sticky skip onle)
+    try { Remove-Item -Recurse -Force (Join-Path $Root "node_modules") -ErrorAction SilentlyContinue } catch {}
+    throw "npm install basarisiz (cikis kodu $LASTEXITCODE). sharp/better-sqlite3 native derleme hatasi olabilir. Tekrar setup.ps1 calistir; surerse loglari incele."
+  }
 }
 Ok "node_modules OK"
 
@@ -120,13 +141,13 @@ Ok "Klasorler hazir"
 @"
 @echo off
 cd /d "%~dp0"
-npm run browser
+npm run browser:dist
 "@ | Set-Content -Encoding ASCII (Join-Path $Root "start-browser.bat")
 
 @"
 @echo off
 cd /d "%~dp0"
-npm start
+npm run start:dist
 "@ | Set-Content -Encoding ASCII (Join-Path $Root "start.bat")
 
 # 11. Masaustu kisayolu launch.bat'a point et

@@ -2,7 +2,8 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const CONFIG_PATH = path.join(__dirname, 'config.json');
+const APP_ROOT = path.basename(__dirname) === 'dist' ? path.resolve(__dirname, '..') : __dirname;
+const CONFIG_PATH = path.join(APP_ROOT, 'config.json');
 const config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
 const port = config.cdpPort || 9333;
 const browserPath = config.operaPath;
@@ -24,8 +25,12 @@ async function main() {
     return;
   }
 
+  // --user-data-dir ZORUNLU: ayri profil olmadan, kullanicinin zaten acik tarayicisina
+  // attach olur ve --remote-debugging-port HIC acilmaz -> CDP olu -> Etsy/Pinterest upload kirik.
+  const profileDir = path.join(APP_ROOT, 'data', 'cdp-profile');
+  try { fs.mkdirSync(profileDir, { recursive: true }); } catch {}
   console.log(`Launching browser with CDP on port ${port}...`);
-  const child = exec(`"${browserPath}" --remote-debugging-port=${port}`, { windowsHide: false });
+  const child = exec(`"${browserPath}" --remote-debugging-port=${port} --user-data-dir="${profileDir}" --no-first-run --no-default-browser-check`, { windowsHide: false });
   child.unref();
 
   // Wait for CDP to become available

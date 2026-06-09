@@ -140,14 +140,14 @@ echo "   Klasorler hazir"
 cat > start-browser.sh <<'EOF'
 #!/usr/bin/env bash
 cd "$(dirname "$0")"
-npm run browser
+npm run browser:dist
 EOF
 chmod +x start-browser.sh
 
 cat > start.sh <<'EOF'
 #!/usr/bin/env bash
 cd "$(dirname "$0")"
-npm start
+npm run start:dist
 EOF
 chmod +x start.sh
 

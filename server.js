@@ -84,9 +84,23 @@ async function withEtsyUploadLock(fn) {
 }
 
 // Retry wrapper for OpenRouter API calls (handles 502/503/429 transient errors)
-async function fetchWithRetry(url, options, maxRetries = 3) {
+async function fetchWithRetry(url, options, maxRetries = 3, timeoutMs = 60000) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    const response = await fetch(url, options);
+    // AbortController: OpenRouter AI cagrisi asili kalmasin -> pipeline donmesin
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    let response;
+    try {
+      response = await fetch(url, { ...options, signal: ctrl.signal });
+    } catch (err) {
+      if (attempt === maxRetries) throw err;
+      const wait = attempt * 5000;
+      console.warn(`  [retry] OpenRouter fetch error (${err.name}), retrying in ${wait / 1000}s (${attempt}/${maxRetries})...`);
+      await new Promise(r => setTimeout(r, wait));
+      continue;
+    } finally {
+      clearTimeout(timer);
+    }
     if (response.ok || attempt === maxRetries) return response;
     const status = response.status;
     if (status === 502 || status === 503 || status === 429 || status === 500) {
@@ -553,10 +567,16 @@ async function isCdpAvailable() {
   try {
     const config = JSON.parse(fs.readFileSync(path.join(APP_ROOT, 'config.json'), 'utf8'));
     const port = config.cdpPort || 9333;
-    // Use lightweight HTTP check instead of full Playwright connect (avoids conflicts)
-    const resp = await fetch(`http://localhost:${port}/json/version`);
-    if (resp.ok) return true;
-    return false;
+    // Use lightweight HTTP check instead of full Playwright connect (avoids conflicts).
+    // AbortController 2sn: CLOSE_WAIT soketinde fetch asili kalmasin.
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 2000);
+    try {
+      const resp = await fetch(`http://localhost:${port}/json/version`, { signal: ctrl.signal });
+      return resp.ok;
+    } finally {
+      clearTimeout(timer);
+    }
   } catch { return false; }
 }
 
